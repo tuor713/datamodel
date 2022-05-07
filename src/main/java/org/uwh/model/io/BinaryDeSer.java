@@ -7,22 +7,26 @@ import java.io.IOException;
 public class BinaryDeSer implements DeSer<DataInputStream, DataOutputStream> {
   @Override
   public void writeInt(DataOutputStream os, int i) throws IOException {
-    os.writeInt(i);
+    int zigzag = (i << 1) ^ (i >> 31);
+    writeUnsigned(os, zigzag);
   }
 
   @Override
   public int readInt(DataInputStream is) throws IOException {
-    return is.readInt();
+    long zigzag = readUnsigned(is);
+    return (int) ((zigzag >>> 1) ^ -(zigzag & 1));
   }
 
   @Override
   public void writeLong(DataOutputStream os, long l) throws IOException {
-    os.writeLong(l);
+    long zigzag = (l << 1) ^ (l >> 63);
+    writeUnsigned(os, zigzag);
   }
 
   @Override
   public long readLong(DataInputStream is) throws IOException {
-    return is.readLong();
+    long zigzag = readUnsigned(is);
+    return (zigzag >>> 1) ^ -(zigzag & 1);
   }
 
   @Override
@@ -30,8 +34,11 @@ public class BinaryDeSer implements DeSer<DataInputStream, DataOutputStream> {
     long mask = 127;
     do {
       long lowest = i & mask;
-      os.write((int) lowest);
       i = i >> 7;
+      if (i != 0) {
+        lowest = lowest | 128;
+      }
+      os.write((int) lowest);
     } while (i != 0);
   }
 
@@ -42,7 +49,8 @@ public class BinaryDeSer implements DeSer<DataInputStream, DataOutputStream> {
     int shift = 0;
     do {
       b = is.read();
-      res += b << shift;
+      long add = (((long) b) & 127) << shift;
+      res += add;
       shift += 7;
     } while ((b & 128) != 0);
     return res;

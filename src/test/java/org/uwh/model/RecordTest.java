@@ -88,7 +88,7 @@ public class RecordTest {
 
     Record sut = new Record(schema);
     sut.put(fString, "string");
-    sut.put(fInt, 3);
+    sut.put(fInt, -3);
     sut.put(fDouble, 2.1);
 
     byte[] bytes = DeSerUtil.serialize(sut);
@@ -180,13 +180,13 @@ public class RecordTest {
   public void testTypeSupport() throws IOException {
     // one byte for list length, two 5 char strings + 2 byte length
     assertTypeRoundTrips(new ListType<>(Type.STRING), List.of("hello", "world"), 15);
-    assertTypeRoundTrips(Type.DATE, LocalDate.now(), 8);
+    assertTypeRoundTrips(Type.DATE, LocalDate.now(), 3);
     // Instant.now() generates a more precise timestamp than milliseconds
-    assertTypeRoundTrips(Type.TIMESTAMP, Instant.ofEpochMilli(System.currentTimeMillis()), 8);
-    assertTypeRoundTrips(Type.LONG, 4L, 8);
+    assertTypeRoundTrips(Type.TIMESTAMP, Instant.ofEpochMilli(System.currentTimeMillis()), 6);
+    assertTypeRoundTrips(Type.LONG, 4L, 1);
     assertTypeRoundTrips(Type.FLOAT, 3.2f, 4);
     assertTypeRoundTrips(Type.BYTES, new byte[] {0,1,2,3}, 5);
-    assertTypeRoundTrips(new MapType<>(Type.STRING, Type.LONG), Map.of("one", 1L, "two", 2L), 27);
+    assertTypeRoundTrips(new MapType<>(Type.STRING, Type.LONG), Map.of("one", 1L, "two", 2L), 13);
   }
 
   private <T> void assertTypeRoundTrips(Type<T> type, T value, int persistedSize) throws IOException {
