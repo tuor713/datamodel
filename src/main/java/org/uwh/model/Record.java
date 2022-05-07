@@ -41,12 +41,12 @@ public class Record {
     return (T) values.get(t.getTag());
   }
 
-  public Object get(Name n) {
+  public <T> T get(Name n) {
     Term t = schema.getVocabulary().lookupTerm(n).orElseThrow();
-    return get(t);
+    return (T) get(t);
   }
 
-  public Object get(String qualifiedName) {
+  public <T> T get(String qualifiedName) {
     return get(Name.ofQualified(qualifiedName));
   }
 

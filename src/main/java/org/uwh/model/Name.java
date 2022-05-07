@@ -17,6 +17,9 @@ public class Name {
 
   public static Name ofQualified(String qualified) {
     String[] parts = qualified.split("/");
+    if (parts.length != 2) {
+      throw new IllegalArgumentException("Expected qualified name <ns>/<name> but got: "+qualified);
+    }
     return Name.of(parts[0], parts[1]);
   }
 

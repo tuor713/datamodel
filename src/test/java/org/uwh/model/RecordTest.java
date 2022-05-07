@@ -39,7 +39,8 @@ public class RecordTest {
     assertNull(sut.get(Name.ofQualified("myns/a")));
 
     sut.put("myns/a", "string");
-    assertEquals("string", sut.get("myns/a"));
+    String res = sut.get("myns/a");
+    assertEquals("string", res);
   }
 
   @Test

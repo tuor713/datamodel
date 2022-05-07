@@ -16,26 +16,53 @@ import org.yaml.snakeyaml.Yaml;
 
 public class SchemaRegistry {
   public static SchemaRegistry parse(Path file) throws IOException {
+    Vocabulary vocab = new Vocabulary();
+    Map<Name,Schema> schemas = new HashMap<>();
+    parse(file, vocab, schemas);
+
+    return new SchemaRegistry(vocab, schemas);
+  }
+
+  private static void parse(Path file, Vocabulary outVocab, Map<Name, Schema> outSchemas) throws IOException {
     Yaml yaml = new Yaml();
     InputStream fis = Files.newInputStream(file);
-    Map map = (Map) yaml.load(fis);
-    Vocabulary vocab = parseVocab((List) map.get("terms"));
+    Map map = yaml.load(fis);
+    if (map.containsKey("require")) {
+      Object v = map.get("require");
+      if (v instanceof String) {
+        parse(file.resolveSibling((String) v), outVocab, outSchemas);
+      } else {
+        for (String p : (List<String>) v) {
+          parse(file.resolveSibling(p), outVocab, outSchemas);
+        }
+      }
+    }
+    String defaultNamespace = (String) map.get("namespace");
 
-    return new SchemaRegistry(vocab, parseSchemas(vocab, (List) map.get("schemas")));
+    if (map.containsKey("terms")) {
+      parseVocab((List) map.get("terms"), defaultNamespace, outVocab);
+    }
+    if (map.containsKey("schemas")) {
+      parseSchemas(outVocab, (List) map.get("schemas"), defaultNamespace, outSchemas);
+    }
   }
 
-  private static Map<Name,Schema> parseSchemas(Vocabulary vocab, List<?> attrs) {
-    return attrs.stream().map(attr -> parseSchema(vocab, (Map) attr)).collect(Collectors.toMap(s -> s.getName(), s -> s));
+  private static void parseSchemas(Vocabulary vocab, List<?> attrs, String defaultNamespace, Map<Name,Schema> outSchemas) {
+    outSchemas.putAll(attrs.stream().map(attr -> parseSchema(vocab, (Map) attr, defaultNamespace)).collect(Collectors.toMap(s -> s.getName(), s -> s)));
   }
 
-  private static Schema parseSchema(Vocabulary vocab, Map attrs) {
-    Name name = Name.ofQualified((String) attrs.get("name"));
+  private static Schema parseSchema(Vocabulary vocab, Map attrs, String defaultNamespace) {
+    Name name = parseName(defaultNamespace, (String) attrs.get("name"));
     Schema schema = new Schema(vocab, name);
     if (attrs.containsKey("required")) {
-      ((List<String>) attrs.get("required")).stream().forEach(s -> schema.require(vocab.lookupTerm(Name.ofQualified(s)).orElseThrow()));
+      ((List<String>) attrs.get("required"))
+          .stream()
+          .forEach(s -> schema.require(vocab.lookupTerm(parseName(defaultNamespace, s)).orElseThrow(() -> new IllegalStateException("Attribute "+s+" not found in vocabulary."))));
     }
     if (attrs.containsKey("allowed")) {
-      ((List<String>) attrs.get("allowed")).stream().forEach(s -> schema.allow(vocab.lookupTerm(Name.ofQualified(s)).orElseThrow()));
+      ((List<String>) attrs.get("allowed"))
+          .stream()
+          .forEach(s -> schema.allow(vocab.lookupTerm(parseName(defaultNamespace, s)).orElseThrow(() -> new IllegalStateException("Attribute "+s+" not found in vocabulary."))));
     }
     if (attrs.containsKey("allow_no_other_terms") && (boolean) attrs.get("allow_no_other_terms")) {
       schema.allowNoOtherTerms();
@@ -43,32 +70,40 @@ public class SchemaRegistry {
     return schema;
   }
 
-  private static Vocabulary parseVocab(List terms) {
-    Vocabulary vocab = new Vocabulary();
-    terms.forEach(v -> vocab.insertTerm(parseTerm(vocab, (Map) v)));
-    return vocab;
+  private static void parseVocab(List terms, String defaultNamespace, Vocabulary outVocab) {
+    terms.forEach(v -> outVocab.insertTerm(parseTerm(outVocab, (Map) v, defaultNamespace)));
   }
 
-  private static Term<?> parseTerm(Vocabulary vocab, Map attrs) {
+  private static Term<?> parseTerm(Vocabulary vocab, Map attrs, String defaultNamespace) {
     String parent = (String) attrs.get("inherit");
     Type<?> type;
     if (parent != null) {
-      type = vocab.lookupTerm(Name.ofQualified(parent)).get().getType();
+      type = vocab.lookupTerm(parseName(defaultNamespace, parent)).get().getType();
     } else {
       type = parseType(attrs.get("type"));
     }
 
     Set<Name> aliases = (attrs.containsKey("aliases") ? (List<String>) attrs.get("aliases") : List.<String>of())
         .stream()
-        .map(Name::ofQualified)
+        .map(s -> parseName(defaultNamespace, s))
         .collect(Collectors.toSet());
 
     return new Term<>(
         (Integer) attrs.get("tag"),
-        Name.ofQualified((String) attrs.get("name")),
+        parseName(defaultNamespace, (String) attrs.get("name")),
         type,
         aliases
     );
+  }
+
+  private static Name parseName(String defaultNamespace, String name) {
+    if (name.contains("/")) {
+      return Name.ofQualified(name);
+    } else if (defaultNamespace != null) {
+      return Name.of(defaultNamespace, name);
+    } else {
+      throw new IllegalArgumentException("Expected qualified name or default namespace but found "+ name);
+    }
   }
 
   private static Type<?> parseType(Object type) {

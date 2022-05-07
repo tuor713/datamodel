@@ -6,16 +6,20 @@ import org.junit.jupiter.api.Test;
 import org.uwh.model.types.Type;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class SchemaRegistryTest {
   @Test
   public void testYamlRead() throws Exception {
-    SchemaRegistry registry = SchemaRegistry.parse(Path.of("src/test/resources/vocab.yaml"));
+    SchemaRegistry registry = SchemaRegistry.parse(Path.of("src/test/resources/schemas.yaml"));
 
     Vocabulary vocab = registry.getVocabulary();
-    assertEquals(5, vocab.size());
+    assertEquals(6, vocab.size());
     assertEquals(Type.STRING, vocab.lookupTerm(Name.of("myns", "varianta")).get().getType());
+    assertTrue(vocab.lookupTerm(Name.ofQualified("myns/a")).isPresent());
+    assertTrue(vocab.lookupTerm(Name.ofQualified("otherns/map")).isPresent());
+
     Term mynsA = vocab.lookupTerm(Name.of("myns", "a")).get();
     assertEquals(1, mynsA.getAliases().size());
 

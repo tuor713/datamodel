@@ -1,10 +1,11 @@
+namespace: myns
 terms:
-  - name: myns/a
+  - name: a
     tag: 1
     type: string
     description: A very important field
     aliases:
-      - myns/olda
+      - olda
   - name: myns/b
     tag: 2
     type: int
@@ -16,19 +17,10 @@ terms:
     type:
       type: list
       item: string
-  - name: myns/map
+  - name: otherns/map
     tag: 5
     type:
       type: map
       key: string
       value: int
-schemas:
-  - name: myns/record
-    required:
-      - myns/a
-    allowed:
-      - myns/b
-    allow_no_other_terms: true
-  - name: myns/another_record
-    required:
-      - myns/b
+

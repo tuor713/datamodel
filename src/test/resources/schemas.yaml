@@ -1,0 +1,17 @@
+require: vocab.yaml
+terms:
+  - name: myns/extra
+    tag: 10
+    type: string
+    description: This field extends the vocabulary in vocab.yaml
+schemas:
+  - name: myns/record
+    required:
+      - myns/a
+      - myns/extra
+    allowed:
+      - myns/b
+    allow_no_other_terms: true
+  - name: myns/another_record
+    required:
+      - myns/b
