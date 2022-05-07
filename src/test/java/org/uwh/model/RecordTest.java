@@ -184,6 +184,7 @@ public class RecordTest {
     // Instant.now() generates a more precise timestamp than milliseconds
     assertTypeRoundTrips(Type.TIMESTAMP, Instant.ofEpochMilli(System.currentTimeMillis()), 8);
     assertTypeRoundTrips(Type.LONG, 4L, 8);
+    assertTypeRoundTrips(Type.FLOAT, 3.2f, 4);
     assertTypeRoundTrips(Type.BYTES, new byte[] {0,1,2,3}, 5);
     assertTypeRoundTrips(new MapType<>(Type.STRING, Type.LONG), Map.of("one", 1L, "two", 2L), 27);
   }

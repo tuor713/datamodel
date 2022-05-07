@@ -22,10 +22,10 @@ public class Vocabulary {
       throw new IllegalArgumentException("Tag " + t.getTag() + " is already defined");
     }
 
-    if (lookupTerm(t.getName()).isPresent()) {
+    if (hasTerm(t.getName())) {
       throw new IllegalArgumentException("Name " + t.getName() + " is already defined");
     }
-    Optional<Name> dupeAlias = t.getAliases().stream().filter(n -> lookupTerm(n).isPresent()).findAny();
+    Optional<Name> dupeAlias = t.getAliases().stream().filter(n -> hasTerm(n)).findAny();
     if (dupeAlias.isPresent()) {
       throw new IllegalArgumentException("Alias " + dupeAlias.get() + " is already defined");
     }
@@ -47,6 +47,10 @@ public class Vocabulary {
   public Optional<Term<?>> lookupTerm(Name name) {
     // TODO more efficient implementation
     return vocab.values().stream().filter(t -> t.getName().equals(name) || t.getAliases().stream().anyMatch(n -> n.equals(name))).findAny();
+  }
+
+  public boolean hasTerm(Name name) {
+    return lookupTerm(name).isPresent();
   }
 
   public int size() {

@@ -17,8 +17,8 @@ public class SchemaRegistryTest {
     Vocabulary vocab = registry.getVocabulary();
     assertEquals(6, vocab.size());
     assertEquals(Type.STRING, vocab.lookupTerm(Name.of("myns", "varianta")).get().getType());
-    assertTrue(vocab.lookupTerm(Name.ofQualified("myns/a")).isPresent());
-    assertTrue(vocab.lookupTerm(Name.ofQualified("otherns/map")).isPresent());
+    assertTrue(vocab.hasTerm(Name.ofQualified("myns/a")));
+    assertTrue(vocab.hasTerm(Name.ofQualified("otherns/map")));
 
     Term mynsA = vocab.lookupTerm(Name.of("myns", "a")).get();
     assertEquals(1, mynsA.getAliases().size());
