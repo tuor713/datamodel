@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.uwh.model.io.DeSerUtil;
 import org.uwh.model.types.ListType;
+import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -182,6 +184,7 @@ public class RecordTest {
     assertTypeRoundTrips(Type.TIMESTAMP, Instant.ofEpochMilli(System.currentTimeMillis()), 8);
     assertTypeRoundTrips(Type.LONG, 4L, 8);
     assertTypeRoundTrips(Type.BYTES, new byte[] {0,1,2,3}, 5);
+    assertTypeRoundTrips(new MapType<>(Type.STRING, Type.LONG), Map.of("one", 1L, "two", 2L), 27);
   }
 
   private <T> void assertTypeRoundTrips(Type<T> type, T value, int persistedSize) throws IOException {

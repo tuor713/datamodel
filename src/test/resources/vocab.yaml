@@ -16,6 +16,12 @@ terms:
     type:
       type: list
       item: string
+  - name: myns/map
+    tag: 5
+    type:
+      type: map
+      key: string
+      value: int
 schemas:
   - name: myns/record
     required:

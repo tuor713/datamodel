@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.uwh.model.types.ListType;
+import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 import org.yaml.snakeyaml.Yaml;
 
@@ -79,6 +80,10 @@ public class SchemaRegistry {
       if ("list".equals(componentType)) {
         Type innerType = parseType(attrs.get("item"));
         return new ListType<>(innerType);
+      } else if ("map".equals(componentType)) {
+        Type keyType = parseType(attrs.get("key"));
+        Type valueType = parseType(attrs.get("value"));
+        return new MapType<>(keyType, valueType);
       } else {
         throw new IllegalArgumentException("Unknown type definition "+type);
       }
