@@ -1,7 +1,5 @@
 package org.uwh.model.io;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,6 +13,16 @@ public class BinaryDeSer implements DeSer<DataInputStream, DataOutputStream> {
   @Override
   public int readInt(DataInputStream is) throws IOException {
     return is.readInt();
+  }
+
+  @Override
+  public void writeLong(DataOutputStream os, long l) throws IOException {
+    os.writeLong(l);
+  }
+
+  @Override
+  public long readLong(DataInputStream is) throws IOException {
+    return is.readLong();
   }
 
   @Override
@@ -51,6 +59,16 @@ public class BinaryDeSer implements DeSer<DataInputStream, DataOutputStream> {
   }
 
   @Override
+  public void writeFloat(DataOutputStream os, float f) throws IOException {
+    os.writeFloat(f);
+  }
+
+  @Override
+  public float readFloat(DataInputStream is) throws IOException {
+    return is.readFloat();
+  }
+
+  @Override
   public void writeString(DataOutputStream os, String s) throws IOException {
     os.writeUTF(s);
   }
@@ -58,5 +76,17 @@ public class BinaryDeSer implements DeSer<DataInputStream, DataOutputStream> {
   @Override
   public String readString(DataInputStream is) throws IOException {
     return is.readUTF();
+  }
+
+  @Override
+  public void writeBytes(DataOutputStream os, byte[] bytes) throws IOException {
+    writeUnsigned(os, bytes.length);
+    os.write(bytes);
+  }
+
+  @Override
+  public byte[] readBytes(DataInputStream is) throws IOException {
+    long len = readUnsigned(is);
+    return is.readNBytes((int) len);
   }
 }

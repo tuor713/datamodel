@@ -1,6 +1,8 @@
 package org.uwh.model;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -172,14 +174,33 @@ public class RecordTest {
   }
 
   @Test
-  public void testListType() throws IOException {
-    Term<List<String>> fieldA = Term.of(1, "myns", "a", new ListType<>(Type.STRING));
+  public void testTypeSupport() throws IOException {
+    // one byte for list length, two 5 char strings + 2 byte length
+    assertTypeRoundTrips(new ListType<>(Type.STRING), List.of("hello", "world"), 15);
+    assertTypeRoundTrips(Type.DATE, LocalDate.now(), 8);
+    // Instant.now() generates a more precise timestamp than milliseconds
+    assertTypeRoundTrips(Type.TIMESTAMP, Instant.ofEpochMilli(System.currentTimeMillis()), 8);
+    assertTypeRoundTrips(Type.LONG, 4L, 8);
+    assertTypeRoundTrips(Type.BYTES, new byte[] {0,1,2,3}, 5);
+  }
+
+  private <T> void assertTypeRoundTrips(Type<T> type, T value, int persistedSize) throws IOException {
+    Term<T> fieldA = Term.of(1, "myns", "a", type);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
     Schema schema = new Schema(vocab, Name.of("myns", "schema"));
     Record sut = new Record(schema);
-    sut.put(fieldA, List.of("hello", "world"));
-    assertEquals(List.of("hello", "world"), sut.get(fieldA));
-    sut = DeSerUtil.deserialize(schema, DeSerUtil.serialize(sut));
-    assertEquals(List.of("hello", "world"), sut.get(fieldA));
+    sut.put(fieldA, value);
+    assertEquals(value, sut.get(fieldA));
+
+    byte[] bytes = DeSerUtil.serialize(sut);
+    // two extra bytes: num fields, tag
+    assertEquals(persistedSize+2, bytes.length);
+
+    sut = DeSerUtil.deserialize(schema, bytes);
+    if (value instanceof byte[]) {
+      assertArrayEquals((byte[]) value, (byte[]) sut.get(fieldA));
+    } else {
+      assertEquals(value, sut.get(fieldA));
+    }
   }
 }
