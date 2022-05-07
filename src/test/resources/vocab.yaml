@@ -1,0 +1,28 @@
+terms:
+  - name: myns/a
+    tag: 1
+    type: string
+    description: A very important field
+    aliases:
+      - myns/olda
+  - name: myns/b
+    tag: 2
+    type: int
+  - name: myns/varianta
+    tag: 3
+    inherit: myns/a
+  - name: myns/list
+    tag: 4
+    type:
+      type: list
+      item: string
+schemas:
+  - name: myns/record
+    required:
+      - myns/a
+    allowed:
+      - myns/b
+    allow_no_other_terms: true
+  - name: myns/another_record
+    required:
+      - myns/b
