@@ -11,6 +11,7 @@ import org.uwh.model.io.DeSerUtil;
 import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
+import org.uwh.model.types.UnionType;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -187,6 +188,11 @@ public class RecordTest {
     assertTypeRoundTrips(Type.FLOAT, 3.2f, 4);
     assertTypeRoundTrips(Type.BYTES, new byte[] {0,1,2,3}, 5);
     assertTypeRoundTrips(new MapType<>(Type.STRING, Type.LONG), Map.of("one", 1L, "two", 2L), 13);
+
+    Type unionType = new UnionType(new Type[] {Type.LONG, Type.STRING, new ListType(Type.STRING)});
+    assertTypeRoundTrips(unionType, 1L, 2);
+    assertTypeRoundTrips(unionType, "abc", 6);
+    assertTypeRoundTrips(unionType, List.of("hello", "world"), 16);
   }
 
   private <T> void assertTypeRoundTrips(Type<T> type, T value, int persistedSize) throws IOException {

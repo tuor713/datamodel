@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
+import org.uwh.model.types.UnionType;
 import org.yaml.snakeyaml.Yaml;
 
 public class SchemaRegistry {
@@ -119,6 +120,9 @@ public class SchemaRegistry {
         Type keyType = parseType(attrs.get("key"));
         Type valueType = parseType(attrs.get("value"));
         return new MapType<>(keyType, valueType);
+      } else if ("union".equals(componentType)) {
+        List<Type> variants = (List) ((List<Object>) attrs.get("variants")).stream().map(SchemaRegistry::parseType).toList();
+        return new UnionType(variants.toArray(new Type[0]));
       } else {
         throw new IllegalArgumentException("Unknown type definition "+type);
       }

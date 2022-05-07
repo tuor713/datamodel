@@ -15,7 +15,7 @@ public class SchemaRegistryTest {
     SchemaRegistry registry = SchemaRegistry.parse(Path.of("src/test/resources/schemas.yaml"));
 
     Vocabulary vocab = registry.getVocabulary();
-    assertEquals(6, vocab.size());
+    assertEquals(7, vocab.size());
     assertEquals(Type.STRING, vocab.lookupTerm(Name.of("myns", "varianta")).get().getType());
     assertTrue(vocab.hasTerm(Name.ofQualified("myns/a")));
     assertTrue(vocab.hasTerm(Name.ofQualified("otherns/map")));

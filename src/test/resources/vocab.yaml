@@ -23,4 +23,14 @@ terms:
       type: map
       key: string
       value: int
+  - name: uniontype
+    tag: 6
+    type:
+      type: union
+      variants:
+        - long
+        - string
+        - type: list
+          item: string
+
 
