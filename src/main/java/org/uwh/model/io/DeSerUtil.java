@@ -44,7 +44,7 @@ public class DeSerUtil {
 
     for (int i=0; i<noFields; i++) {
       int tag = (int) deser.readUnsigned(dis);
-      Term t = vocab.getTerm(tag).orElseThrow();
+      Term t = vocab.getTerm(tag).orElseThrow(() -> new IllegalStateException("No term defined for tag " + tag));
       values.put(tag, t.getType().deserialize(deser, dis));
     }
 
