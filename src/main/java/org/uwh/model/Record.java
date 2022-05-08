@@ -59,6 +59,6 @@ public class Record {
   }
 
   public boolean isValid() {
-    return schema.isValid(values);
+    return schema.isValid(this);
   }
 }

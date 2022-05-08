@@ -1,8 +1,12 @@
 package org.uwh.model;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.uwh.model.validation.Rule;
 
 
 public class Schema {
@@ -11,6 +15,7 @@ public class Schema {
   private boolean allowOthers;
   private final Set<Term> allowed;
   private final Name name;
+  private final List<Rule> rules;
 
   public Schema(Vocabulary vocab, Name name) {
     this.vocab = vocab;
@@ -18,6 +23,7 @@ public class Schema {
     this.required = new HashSet<>();
     allowOthers = true;
     allowed = new HashSet<>();
+    rules = new ArrayList<>();
   }
 
   public Name getName() {
@@ -44,8 +50,18 @@ public class Schema {
     return this;
   }
 
-  boolean isValid(Map<Integer, Object> values) {
-    return required.stream().allMatch(t -> values.containsKey(t.getTag()));
+  public void mustHaveOneOf(Term... terms) {
+    rules.add(rec -> Arrays.stream(terms).filter(t -> rec.get(t) != null).count() == 1);
+  }
+
+  public void mustHaveAtLeastOneOf(Term... terms) {
+    rules.add(rec -> Arrays.stream(terms).anyMatch(t -> rec.get(t) != null));
+  }
+
+  boolean isValid(Record rec) {
+    Map<Integer,Object> values = rec.getValues();
+    return required.stream().allMatch(t -> values.containsKey(t.getTag()))
+        && rules.stream().allMatch(r -> r.isSatisfied(rec));
   }
 
   public boolean isValidTerm(Term<?> t) {

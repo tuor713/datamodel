@@ -15,3 +15,9 @@ schemas:
   - name: myns/another_record
     required:
       - myns/b
+    validation:
+      - type: one-of
+        terms: ["myns/a", "myns/extra"]
+      - type: at-least-one-of
+        terms: ["myns/varianta", "myns/list"]
+

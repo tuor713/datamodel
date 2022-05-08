@@ -155,6 +155,8 @@ public class RecordTest {
     schema.require(fieldA);
     sut = new Record(schema);
     assertFalse(sut.isValid());
+    sut.put(fieldA, null);
+    assertFalse(sut.isValid());
     sut.put(fieldA, "string");
     assertTrue(sut.isValid());
 
@@ -175,6 +177,49 @@ public class RecordTest {
     sut.put(fieldA, "string");
     sut.put(fieldB, 3);
     assertEquals(3, sut.get(fieldB));
+  }
+
+  @Test
+  public void testOneOfRule() {
+    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
+    Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
+    Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
+    Schema schema = new Schema(vocab, Name.ofQualified("myns/schema"));
+    schema.mustHaveOneOf(fieldA, fieldB);
+
+    Record sut = new Record(schema);
+    assertFalse(sut.isValid());
+
+    sut.put(fieldA, "world");
+    assertTrue(sut.isValid());
+
+    sut.put(fieldB, 2);
+    assertFalse((sut.isValid()));
+
+    sut.put(fieldA, null);
+    assertTrue(sut.isValid());
+  }
+
+  @Test
+  public void testAtLeastOneOfRule() {
+    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
+    Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
+    Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
+    Schema schema = new Schema(vocab, Name.ofQualified("myns/schema"));
+    schema.mustHaveAtLeastOneOf(fieldA, fieldB);
+
+    Record sut = new Record(schema);
+    assertFalse(sut.isValid());
+
+    sut.put(fieldA, "hello");
+    assertTrue(sut.isValid());
+
+    sut.put(fieldB, 2);
+    assertTrue(sut.isValid());
+
+    sut = new Record(schema);
+    sut.put(fieldB, 2);
+    assertTrue(sut.isValid());
   }
 
   @Test

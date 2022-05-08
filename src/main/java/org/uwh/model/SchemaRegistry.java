@@ -68,7 +68,28 @@ public class SchemaRegistry {
     if (attrs.containsKey("allow_no_other_terms") && (boolean) attrs.get("allow_no_other_terms")) {
       schema.allowNoOtherTerms();
     }
+    if (attrs.containsKey("validation")) {
+      ((List) attrs.get("validation")).stream().forEach(m -> parseValidationRule((Map) m, schema, vocab, defaultNamespace));
+    }
+
     return schema;
+  }
+
+  private static void parseValidationRule(Map attrs, Schema schema, Vocabulary vocab, String defaultNamespace) {
+    String type = (String) attrs.get("type");
+    if ("one-of".equals(type)) {
+      List<Term> terms = (List) ((List<String>) attrs.get("terms"))
+          .stream()
+          .map(s -> vocab.lookupTerm(parseName(defaultNamespace, s)).get()).toList();
+      schema.mustHaveOneOf(terms.toArray(new Term[0]));
+    } else if ("at-least-one-of".equals(type)) {
+      List<Term> terms = (List) ((List<String>) attrs.get("terms"))
+          .stream()
+          .map(s -> vocab.lookupTerm(parseName(defaultNamespace, s)).get()).toList();
+      schema.mustHaveAtLeastOneOf(terms.toArray(new Term[0]));
+    } else {
+      throw new IllegalArgumentException("Unknown validation rule type: " + type);
+    }
   }
 
   private static void parseVocab(List terms, String defaultNamespace, Vocabulary outVocab) {
