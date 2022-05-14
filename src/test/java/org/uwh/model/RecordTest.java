@@ -12,6 +12,7 @@ import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 import org.uwh.model.types.UnionType;
+import org.uwh.model.validation.Rules;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -185,7 +186,7 @@ public class RecordTest {
     Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
     Schema schema = new Schema(vocab, Name.ofQualified("myns/schema"));
-    schema.mustHaveOneOf(fieldA, fieldB);
+    schema.requireOneOf(fieldA, fieldB);
 
     Record sut = new Record(schema);
     assertFalse(sut.isValid());
@@ -206,7 +207,7 @@ public class RecordTest {
     Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
     Schema schema = new Schema(vocab, Name.ofQualified("myns/schema"));
-    schema.mustHaveAtLeastOneOf(fieldA, fieldB);
+    schema.requireOneOrMoreOf(fieldA, fieldB);
 
     Record sut = new Record(schema);
     assertFalse(sut.isValid());
@@ -219,6 +220,36 @@ public class RecordTest {
 
     sut = new Record(schema);
     sut.put(fieldB, 2);
+    assertTrue(sut.isValid());
+  }
+
+  @Test
+  public void testConditionalRules() {
+    Term<String> fProductType = Term.of(1, "myns/product_type", Type.STRING);
+    Term<Double> fNotional = Term.of(2, "myns/notional", Type.DOUBLE);
+    Term<Double> fPayNotional = Term.of(3, "myns/pay_notional", Type.DOUBLE);
+    Term<Double> fReceiveNotional = Term.of(4, "myns/receive_notional", Type.DOUBLE);
+    Vocabulary vocab = new Vocabulary(List.of(fProductType, fNotional, fPayNotional, fReceiveNotional));
+    Schema schema = new Schema(vocab, Name.ofQualified("myns/trade"));
+    schema.require(Rules.conditionally(
+        rec -> "SWAP".equals(rec.get(fProductType)),
+        Rules.all(Rules.require(fPayNotional), Rules.require(fReceiveNotional)),
+        Rules.require(fNotional)));
+
+    Record sut = new Record(schema);
+    assertFalse(sut.isValid());
+    sut.put(fProductType, "BOND");
+    sut.put(fNotional, 1000.0);
+    assertTrue(sut.isValid());
+
+    sut = new Record(schema);
+    sut.put(fProductType, "SWAP");
+    sut.put(fNotional, 1000.0);
+    assertFalse(sut.isValid());
+    sut.put(fNotional, null);
+    sut.put(fPayNotional, 1000.0);
+    assertFalse(sut.isValid());
+    sut.put(fReceiveNotional, 500.0);
     assertTrue(sut.isValid());
   }
 

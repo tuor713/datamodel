@@ -20,4 +20,15 @@ schemas:
         terms: ["myns/a", "myns/extra"]
       - type: at-least-one-of
         terms: ["myns/varianta", "myns/list"]
+      - type: conditionally
+        if:
+          type: equals
+          left: SWAP
+          right: <<myns/a>>
+        then:
+          type: require
+          terms: ["myns/b"]
+        else:
+          type: require
+          terms: ["myns/list"]
 

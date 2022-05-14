@@ -23,6 +23,11 @@ public class Term<T> {
     return new Term<>(tag, name, type, Set.of());
   }
 
+  public static<T> Term<T> of(int tag, String qName, Type<T> type) {
+    return new Term<>(tag, Name.ofQualified(qName), type, Set.of());
+  }
+
+
   public static<T> Term<T> of(int tag, String ns, String name, Type<T> type) {
     return new Term<>(tag, new Name(ns, name), type, Set.of());
   }

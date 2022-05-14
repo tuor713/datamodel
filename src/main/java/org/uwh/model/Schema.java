@@ -1,12 +1,13 @@
 package org.uwh.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.uwh.model.validation.Rule;
+import org.uwh.model.validation.Rules;
 
 
 public class Schema {
@@ -50,12 +51,20 @@ public class Schema {
     return this;
   }
 
-  public void mustHaveOneOf(Term... terms) {
-    rules.add(rec -> Arrays.stream(terms).filter(t -> rec.get(t) != null).count() == 1);
+  public void requireOneOf(Term... terms) {
+    rules.add(Rules.requireOneOf(terms));
   }
 
-  public void mustHaveAtLeastOneOf(Term... terms) {
-    rules.add(rec -> Arrays.stream(terms).anyMatch(t -> rec.get(t) != null));
+  public void requireOneOrMoreOf(Term... terms) {
+    rules.add(Rules.requireOneOrMoreOf(terms));
+  }
+
+  public void requireConditionally(Predicate<Record> cond, Rule ifRule, Rule elseRule) {
+    rules.add(Rules.conditionally(cond, ifRule, elseRule));
+  }
+
+  public void require(Rule rule) {
+    rules.add(rule);
   }
 
   boolean isValid(Record rec) {

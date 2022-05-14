@@ -8,11 +8,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 import org.uwh.model.types.UnionType;
+import org.uwh.model.validation.Rule;
+import org.uwh.model.validation.Rules;
 import org.yaml.snakeyaml.Yaml;
 
 public class SchemaRegistry {
@@ -69,27 +75,69 @@ public class SchemaRegistry {
       schema.allowNoOtherTerms();
     }
     if (attrs.containsKey("validation")) {
-      ((List) attrs.get("validation")).stream().forEach(m -> parseValidationRule((Map) m, schema, vocab, defaultNamespace));
+      ((List) attrs.get("validation")).stream().forEach(m -> schema.require(parseValidationRule((Map) m, vocab, defaultNamespace)));
     }
 
     return schema;
   }
 
-  private static void parseValidationRule(Map attrs, Schema schema, Vocabulary vocab, String defaultNamespace) {
+  private static Rule parseValidationRule(Map attrs, Vocabulary vocab, String defaultNamespace) {
     String type = (String) attrs.get("type");
     if ("one-of".equals(type)) {
-      List<Term> terms = (List) ((List<String>) attrs.get("terms"))
-          .stream()
-          .map(s -> vocab.lookupTerm(parseName(defaultNamespace, s)).get()).toList();
-      schema.mustHaveOneOf(terms.toArray(new Term[0]));
+      List<Term> terms = parseListOfTerms((List<String>) attrs.get("terms"), vocab, defaultNamespace);
+      return Rules.requireOneOf(terms.toArray(new Term[0]));
     } else if ("at-least-one-of".equals(type)) {
-      List<Term> terms = (List) ((List<String>) attrs.get("terms"))
-          .stream()
-          .map(s -> vocab.lookupTerm(parseName(defaultNamespace, s)).get()).toList();
-      schema.mustHaveAtLeastOneOf(terms.toArray(new Term[0]));
+      List<Term> terms = parseListOfTerms((List<String>) attrs.get("terms"), vocab, defaultNamespace);
+      return Rules.requireOneOrMoreOf(terms.toArray(new Term[0]));
+    } else if ("require".equals(type)) {
+      List<Term> terms = parseListOfTerms((List<String>) attrs.get("terms"), vocab, defaultNamespace);
+      if (terms.size() == 1) {
+        return Rules.require(terms.get(0));
+      } else {
+        return Rules.all(terms.stream().map(t -> Rules.require(t)).collect(Collectors.toList()));
+      }
+    } else if ("conditionally".equals(type)) {
+      Predicate<Record> condition = parseCondition((Map) attrs.get("if"), vocab, defaultNamespace);
+      Rule thenRule = parseValidationRule((Map) attrs.get("then"), vocab, defaultNamespace);
+      Rule elseRule = attrs.containsKey("else") ? parseValidationRule((Map) attrs.get("else"), vocab, defaultNamespace) : Rules.always();
+      return Rules.conditionally(condition, thenRule, elseRule);
     } else {
       throw new IllegalArgumentException("Unknown validation rule type: " + type);
     }
+  }
+
+  private static Predicate<Record> parseCondition(Map attrs, Vocabulary vocab, String defaultNamespace) {
+    String type = (String) attrs.get("type");
+    if ("equals".equals(type)) {
+      Function<Record, Object> lhs = parseAccessor(attrs.get("left"), vocab, defaultNamespace);
+      Function<Record, Object> rhs = parseAccessor(attrs.get("left"), vocab, defaultNamespace);
+      return (rec) -> {
+        Object l = lhs.apply(rec);
+        Object r = rhs.apply(rec);
+        return (l == null && r == null) || (l != null && l.equals(r));
+      };
+    } else {
+      throw new IllegalArgumentException("Unknown predicate type: " + type);
+    }
+  }
+
+  private static Function<Record, Object> parseAccessor(Object v, Vocabulary vocab, String defaultNamespace) {
+    if (v instanceof String && ((String) v).matches("<<.*>>")) {
+      Matcher m = Pattern.compile("<<(.*)>>").matcher((String) v);
+      m.find();
+      String name = m.group(1);
+      Name n = parseName(defaultNamespace, name);
+      Term t = vocab.lookupTerm(n).orElseThrow(() -> new IllegalArgumentException("Could not find term " + n + " in vocabulary."));
+      return (rec) -> rec.get(t);
+    } else {
+      return (rec) -> v;
+    }
+  }
+
+  private static List<Term> parseListOfTerms(List<String> names, Vocabulary vocab, String defaultNamespace) {
+    return (List) names
+        .stream()
+        .map(s -> vocab.lookupTerm(parseName(defaultNamespace, s)).get()).toList();
   }
 
   private static void parseVocab(List terms, String defaultNamespace, Vocabulary outVocab) {
