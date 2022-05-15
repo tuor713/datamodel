@@ -1,0 +1,24 @@
+namespace: trading
+terms:
+  - name: id
+    tag: 1
+    type: string
+  - name: notional
+    tag: 2
+    type: double
+  - name: security_id
+    tag: 3
+    type: string
+  - name: ticker
+    tag: 4
+    type: string
+  - name: book
+    tag: 5
+    type: string
+schemas:
+  - name: trade
+    required:
+      - id
+      - notional
+      - book
+

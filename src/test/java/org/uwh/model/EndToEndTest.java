@@ -1,13 +1,28 @@
 package org.uwh.model;
 
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.uwh.model.io.DeSerUtil;
 import org.uwh.model.types.Type;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class EndToEndTest {
+  @Test
+  public void testE2EWithYAML() throws Exception {
+    SchemaRegistry reg = SchemaRegistry.parse(Path.of("src/test/resources/e2e/trading.yaml"));
+    Schema schema = reg.getSchema("trading/trade").get();
+
+    Record t = new Record(schema);
+    t.put("trading/id", "123");
+    t.put("trading/notional", 1000.0);
+    t.put("trading/book", "MYBOOK");
+    assertTrue(t.isValid());
+  }
+
   @Test
   public void testProgressiveEnrichmentSharedVocab() throws Exception {
     // Producer - schemaA

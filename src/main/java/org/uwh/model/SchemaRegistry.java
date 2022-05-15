@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -208,6 +209,14 @@ public class SchemaRegistry {
 
   public Vocabulary getVocabulary() {
     return vocabulary;
+  }
+
+  public Optional<Schema> getSchema(Name name) {
+    return Optional.ofNullable(schemas.get(name));
+  }
+
+  public Optional<Schema> getSchema(String qName) {
+    return getSchema(Name.ofQualified(qName));
   }
 
   public Map<Name, Schema> getSchemas() {
