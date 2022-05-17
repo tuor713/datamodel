@@ -3,10 +3,11 @@ package org.uwh.model;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import org.uwh.model.types.Type;
 
 
-public class Term<T> {
+public class Term<T> implements TagTranslation<Term<T>> {
   private final int tag;
   private final Name name;
   private final Set<Name> aliases;
@@ -34,6 +35,11 @@ public class Term<T> {
 
   public int getTag() {
     return tag;
+  }
+
+  @Override
+  public Term<T> withTagTranslation(Function<Integer, Integer> mapper) {
+    return new Term<>(mapper.apply(tag), name, type, aliases);
   }
 
   public Name getName() {

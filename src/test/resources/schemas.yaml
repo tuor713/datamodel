@@ -1,4 +1,6 @@
 require: vocab.yaml
+namespace: myns
+version: 1.0.0
 terms:
   - name: myns/extra
     tag: 10

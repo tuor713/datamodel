@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.uwh.model.Context;
 import org.uwh.model.Record;
 import org.uwh.model.Schema;
 import org.uwh.model.Term;
@@ -16,7 +17,7 @@ import org.uwh.model.Vocabulary;
 public class DeSerUtil {
   public static byte[] serialize(Record rec) throws IOException {
     Map<Integer, Object> values = rec.getValues();
-    Vocabulary vocab = rec.getSchema().getVocabulary();
+    Vocabulary vocab = rec.getContext().getVocab();
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(bos);
     DeSer<DataInputStream, DataOutputStream> deser = new BinaryDeSer();
@@ -33,11 +34,11 @@ public class DeSerUtil {
     return bos.toByteArray();
   }
 
-  public static Record deserialize(Schema schema, byte[] bytes) throws IOException {
+  public static Record deserialize(Context ctx, Schema schema, byte[] bytes) throws IOException {
     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
     DataInputStream dis = new DataInputStream(bis);
     DeSer<DataInputStream, DataOutputStream> deser = new BinaryDeSer();
-    Vocabulary vocab = schema.getVocabulary();
+    Vocabulary vocab = ctx.getVocab();
 
     Map<Integer,Object> values = new HashMap<>();
     long noFields = deser.readUnsigned(dis);
@@ -48,6 +49,6 @@ public class DeSerUtil {
       values.put(tag, t.getType().deserialize(deser, dis));
     }
 
-    return new Record(schema, values);
+    return new Record(ctx, schema, values);
   }
 }

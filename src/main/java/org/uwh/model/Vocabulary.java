@@ -2,10 +2,14 @@ package org.uwh.model;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-public class Vocabulary {
+
+public class Vocabulary implements TagTranslation<Vocabulary> {
   private final Map<Integer, Term<?>> vocab;
 
   public Vocabulary() {
@@ -15,6 +19,17 @@ public class Vocabulary {
   public Vocabulary(Collection<Term<?>> vocab) {
     this.vocab = new HashMap<>();
     vocab.forEach(this::insertTerm);
+  }
+
+  public static Vocabulary createJointVocab(List<Vocabulary> vocabs) {
+    Vocabulary result = new Vocabulary();
+    vocabs.forEach(v -> v.getTerms().forEach(result::insertTerm));
+    return result;
+  }
+
+  @Override
+  public Vocabulary withTagTranslation(Function<Integer, Integer> mapper) {
+    return new Vocabulary(vocab.values().stream().map(t -> t.withTagTranslation(mapper)).collect(Collectors.toList()));
   }
 
   public void insertTerm(Term<?> t) {
@@ -47,6 +62,10 @@ public class Vocabulary {
   public Optional<Term<?>> lookupTerm(Name name) {
     // TODO more efficient implementation
     return vocab.values().stream().filter(t -> t.getName().equals(name) || t.getAliases().stream().anyMatch(n -> n.equals(name))).findAny();
+  }
+
+  private Collection<Term<?>> getTerms() {
+    return vocab.values();
   }
 
   public boolean hasTerm(Name name) {

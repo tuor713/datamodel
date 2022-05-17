@@ -7,10 +7,8 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -18,30 +16,42 @@ import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 import org.uwh.model.types.UnionType;
+import org.uwh.model.validation.Predicate;
 import org.uwh.model.validation.Rule;
 import org.uwh.model.validation.Rules;
 import org.yaml.snakeyaml.Yaml;
 
-public class SchemaRegistry {
-  public static SchemaRegistry parse(Path file) throws IOException {
+public class Parser {
+  public static Namespace parseNamespace(Path file) throws IOException {
     Vocabulary vocab = new Vocabulary();
     Map<Name,Schema> schemas = new HashMap<>();
-    parse(file, vocab, schemas);
 
-    return new SchemaRegistry(vocab, schemas);
-  }
-
-  private static void parse(Path file, Vocabulary outVocab, Map<Name, Schema> outSchemas) throws IOException {
     Yaml yaml = new Yaml();
     InputStream fis = Files.newInputStream(file);
     Map map = yaml.load(fis);
+    parseContent(file, map, vocab, schemas);
+
+    String name = (String) map.get("namespace");
+    SemVer version = SemVer.of((String) map.get("version"));
+
+    return new Namespace(name, version, vocab, schemas);
+  }
+
+  private static void parseChild(Path file, Vocabulary outVocab, Map<Name, Schema> outSchemas) throws IOException {
+    Yaml yaml = new Yaml();
+    InputStream fis = Files.newInputStream(file);
+    Map map = yaml.load(fis);
+    parseContent(file, map, outVocab, outSchemas);
+  }
+
+  private static void parseContent(Path file, Map map, Vocabulary outVocab, Map<Name, Schema> outSchemas) throws IOException {
     if (map.containsKey("require")) {
       Object v = map.get("require");
       if (v instanceof String) {
-        parse(file.resolveSibling((String) v), outVocab, outSchemas);
+        parseChild(file.resolveSibling((String) v), outVocab, outSchemas);
       } else {
         for (String p : (List<String>) v) {
-          parse(file.resolveSibling(p), outVocab, outSchemas);
+          parseChild(file.resolveSibling(p), outVocab, outSchemas);
         }
       }
     }
@@ -61,7 +71,7 @@ public class SchemaRegistry {
 
   private static Schema parseSchema(Vocabulary vocab, Map attrs, String defaultNamespace) {
     Name name = parseName(defaultNamespace, (String) attrs.get("name"));
-    Schema schema = new Schema(vocab, name);
+    Schema schema = new Schema(name);
     if (attrs.containsKey("required")) {
       ((List<String>) attrs.get("required"))
           .stream()
@@ -107,31 +117,57 @@ public class SchemaRegistry {
     }
   }
 
+  private static class EqualsPredicate implements Predicate<Record> {
+    private final Object lhs;
+    private final Object rhs;
+
+    public EqualsPredicate(Object lhs, Object rhs) {
+      this.lhs = lhs;
+      this.rhs = rhs;
+    }
+
+    @Override
+    public boolean test(Record rec) {
+      Object l = lhs;
+      Object r = rhs;
+      if (l instanceof Term<?>) {
+        l = rec.get((Term) l);
+      }
+      if (r instanceof Term<?>) {
+        r = rec.get((Term) r);
+      }
+
+      return (l == null && r == null) || (l != null && l.equals(r));
+    }
+
+    @Override
+    public Predicate<Record> withTagTranslation(Function<Integer, Integer> mapper) {
+      Object l = (lhs instanceof Term<?>) ? ((Term) lhs).withTagTranslation(mapper) : lhs;
+      Object r = (rhs instanceof Term<?>) ? ((Term) rhs).withTagTranslation(mapper) : rhs;
+      return new EqualsPredicate(l, r);
+    }
+  }
+
   private static Predicate<Record> parseCondition(Map attrs, Vocabulary vocab, String defaultNamespace) {
     String type = (String) attrs.get("type");
     if ("equals".equals(type)) {
-      Function<Record, Object> lhs = parseAccessor(attrs.get("left"), vocab, defaultNamespace);
-      Function<Record, Object> rhs = parseAccessor(attrs.get("left"), vocab, defaultNamespace);
-      return (rec) -> {
-        Object l = lhs.apply(rec);
-        Object r = rhs.apply(rec);
-        return (l == null && r == null) || (l != null && l.equals(r));
-      };
+      Object lhs = parseAccessor(attrs.get("left"), vocab, defaultNamespace);
+      Object rhs = parseAccessor(attrs.get("left"), vocab, defaultNamespace);
+      return new EqualsPredicate(lhs, rhs);
     } else {
       throw new IllegalArgumentException("Unknown predicate type: " + type);
     }
   }
 
-  private static Function<Record, Object> parseAccessor(Object v, Vocabulary vocab, String defaultNamespace) {
+  private static Object parseAccessor(Object v, Vocabulary vocab, String defaultNamespace) {
     if (v instanceof String && ((String) v).matches("<<.*>>")) {
       Matcher m = Pattern.compile("<<(.*)>>").matcher((String) v);
       m.find();
       String name = m.group(1);
       Name n = parseName(defaultNamespace, name);
-      Term t = vocab.lookupTerm(n).orElseThrow(() -> new IllegalArgumentException("Could not find term " + n + " in vocabulary."));
-      return (rec) -> rec.get(t);
+      return vocab.lookupTerm(n).orElseThrow(() -> new IllegalArgumentException("Could not find term " + n + " in vocabulary."));
     } else {
-      return (rec) -> v;
+      return v;
     }
   }
 
@@ -191,35 +227,11 @@ public class SchemaRegistry {
         Type valueType = parseType(attrs.get("value"));
         return new MapType<>(keyType, valueType);
       } else if ("union".equals(componentType)) {
-        List<Type> variants = (List) ((List<Object>) attrs.get("variants")).stream().map(SchemaRegistry::parseType).toList();
+        List<Type> variants = (List) ((List<Object>) attrs.get("variants")).stream().map(Parser::parseType).toList();
         return new UnionType(variants.toArray(new Type[0]));
       } else {
         throw new IllegalArgumentException("Unknown type definition "+type);
       }
     }
-  }
-
-  private final Vocabulary vocabulary;
-  private final Map<Name, Schema> schemas;
-
-  public SchemaRegistry(Vocabulary vocabulary, Map<Name, Schema> schemas) {
-    this.vocabulary = vocabulary;
-    this.schemas = new HashMap<>(schemas);
-  }
-
-  public Vocabulary getVocabulary() {
-    return vocabulary;
-  }
-
-  public Optional<Schema> getSchema(Name name) {
-    return Optional.ofNullable(schemas.get(name));
-  }
-
-  public Optional<Schema> getSchema(String qName) {
-    return getSchema(Name.ofQualified(qName));
-  }
-
-  public Map<Name, Schema> getSchemas() {
-    return schemas;
   }
 }

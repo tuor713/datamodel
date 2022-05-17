@@ -6,12 +6,14 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.uwh.model.io.DeSerUtil;
 import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 import org.uwh.model.types.UnionType;
+import org.uwh.model.validation.Predicate;
 import org.uwh.model.validation.Rules;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,9 +23,10 @@ public class RecordTest {
   public void testInsertRetrieve() {
     Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     assertNull(sut.get(fieldA));
 
     sut.put(fieldA, "string");
@@ -34,9 +37,10 @@ public class RecordTest {
   public void testFieldSugar() {
     Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     assertNull(sut.get("myns/a"));
     assertNull(sut.get(Name.ofQualified("myns/a")));
 
@@ -48,9 +52,10 @@ public class RecordTest {
   @Test
   public void testCannotInsertTermNotInVocab() {
     Vocabulary vocab = new Vocabulary(List.of(Term.of(1, "myns", "a", Type.STRING)));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     assertThrows(IllegalArgumentException.class, () -> {
       sut.put(Term.of(2, "myns", "b", Type.STRING), "string");
     });
@@ -66,15 +71,16 @@ public class RecordTest {
     Term<Integer> fInt = Term.of(2, "myns", "int_field", Type.INT);
     Term<Double> fDouble = Term.of(3, "myns", "double_field", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fString, fInt, fDouble));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     sut.put(fString, "string");
     sut.put(fInt, 3);
     sut.put(fDouble, 2.1);
 
     byte[] bytes = DeSerUtil.serialize(sut);
-    Record roundTrip = DeSerUtil.deserialize(schema, bytes);
+    Record roundTrip = DeSerUtil.deserialize(ns.toContext(), schema, bytes);
     assertEquals("string", roundTrip.get(fString));
     assertEquals(3, roundTrip.get(fInt));
     assertEquals(2.1, (double) roundTrip.get(fDouble), 0.00001);
@@ -86,9 +92,10 @@ public class RecordTest {
     Term<Integer> fInt = Term.of(2, "myns", "int_field", Type.INT);
     Term<Double> fDouble = Term.of(3, "myns", "double_field", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fString, fInt, fDouble));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     sut.put(fString, "string");
     sut.put(fInt, -3);
     sut.put(fDouble, 2.1);
@@ -107,17 +114,20 @@ public class RecordTest {
   public void testDeSerWithDifferentSchemaVersions() throws IOException {
     Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     sut.put(fieldA, "string");
 
     byte[] bytes = DeSerUtil.serialize(sut);
 
     Term<String> fieldB = new Term<>(1, Name.of("myns", "aprime"), Type.STRING, Set.of(Name.of("myns", "a")));
     Vocabulary vocab2 = new Vocabulary(List.of(fieldB));
-    Schema schema2 = new Schema(vocab2, Name.of("myns", "schema"));
-    Record roundTrip = DeSerUtil.deserialize(schema2, bytes);
+    Schema schema2 = new Schema(Name.of("myns", "schema"));
+    Namespace ns2 = new Namespace("myns", SemVer.of("1.1.0"), vocab2, Map.of(schema2.getName(), schema2));
+
+    Record roundTrip = DeSerUtil.deserialize(ns2.toContext(), schema2, bytes);
     assertEquals("string", roundTrip.get(fieldB));
   }
 
@@ -127,9 +137,10 @@ public class RecordTest {
     Term<Integer> fInt = Term.of(2, "myns", "int_field", Type.INT);
     Term<Double> fDouble = Term.of(3, "myns", "double_field", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fString, fInt, fDouble));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     sut.put(fString, null);
     sut.put(fInt, null);
     sut.put(fDouble, null);
@@ -138,7 +149,7 @@ public class RecordTest {
     // only the length (0)
     assertEquals(1, bytes.length);
 
-    Record sut2 = DeSerUtil.deserialize(schema, bytes);
+    Record sut2 = DeSerUtil.deserialize(ns.toContext(), schema, bytes);
     assertNull(sut2.get(fString));
     assertNull(sut2.get(fInt));
     assertNull(sut2.get(fDouble));
@@ -149,21 +160,24 @@ public class RecordTest {
     Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
     Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
-    Record sut = new Record(schema);
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
+
+    Record sut = new Record(ns.toContext(), schema);
     assertTrue(sut.isValid());
 
     schema.require(fieldA);
-    sut = new Record(schema);
+    sut = new Record(ns.toContext(), schema);
     assertFalse(sut.isValid());
     sut.put(fieldA, null);
     assertFalse(sut.isValid());
     sut.put(fieldA, "string");
     assertTrue(sut.isValid());
 
-    schema = new Schema(vocab, Name.of("myns", "schema"));
+    schema = new Schema(Name.of("myns", "schema"));
     schema.require(fieldA).allowNoOtherTerms();
-    final Record sut2 = new Record(schema);
+    ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
+    final Record sut2 = new Record(ns.toContext(), schema);
     assertThrows(IllegalArgumentException.class, () -> {
       sut2.put(fieldB, 3);
     });
@@ -172,9 +186,10 @@ public class RecordTest {
     sut.put(fieldB, 3);
     assertTrue(sut.isValid());
 
-    schema = new Schema(vocab, Name.of("myns", "schema"));
+    schema = new Schema(Name.of("myns", "schema"));
     schema.require(fieldA);
-    sut = new Record(schema);
+    ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
+    sut = new Record(ns.toContext(), schema);
     sut.put(fieldA, "string");
     sut.put(fieldB, 3);
     assertEquals(3, sut.get(fieldB));
@@ -185,10 +200,11 @@ public class RecordTest {
     Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
     Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
-    Schema schema = new Schema(vocab, Name.ofQualified("myns/schema"));
+    Schema schema = new Schema(Name.ofQualified("myns/schema"));
     schema.requireOneOf(fieldA, fieldB);
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     assertFalse(sut.isValid());
 
     sut.put(fieldA, "world");
@@ -206,10 +222,11 @@ public class RecordTest {
     Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
     Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
-    Schema schema = new Schema(vocab, Name.ofQualified("myns/schema"));
+    Schema schema = new Schema(Name.ofQualified("myns/schema"));
     schema.requireOneOrMoreOf(fieldA, fieldB);
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     assertFalse(sut.isValid());
 
     sut.put(fieldA, "hello");
@@ -218,7 +235,7 @@ public class RecordTest {
     sut.put(fieldB, 2);
     assertTrue(sut.isValid());
 
-    sut = new Record(schema);
+    sut = new Record(ns.toContext(), schema);
     sut.put(fieldB, 2);
     assertTrue(sut.isValid());
   }
@@ -230,19 +247,30 @@ public class RecordTest {
     Term<Double> fPayNotional = Term.of(3, "myns/pay_notional", Type.DOUBLE);
     Term<Double> fReceiveNotional = Term.of(4, "myns/receive_notional", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fProductType, fNotional, fPayNotional, fReceiveNotional));
-    Schema schema = new Schema(vocab, Name.ofQualified("myns/trade"));
+    Schema schema = new Schema(Name.ofQualified("myns/trade"));
     schema.require(Rules.conditionally(
-        rec -> "SWAP".equals(rec.get(fProductType)),
+        new Predicate<>() {
+          @Override
+          public boolean test(Record rec) {
+            return "SWAP".equals(rec.get(fProductType));
+          }
+
+          @Override
+          public Predicate<Record> withTagTranslation(Function<Integer, Integer> mapper) {
+            return this;
+          }
+        },
         Rules.all(Rules.require(fPayNotional), Rules.require(fReceiveNotional)),
         Rules.require(fNotional)));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
-    Record sut = new Record(schema);
+    Record sut = new Record(ns.toContext(), schema);
     assertFalse(sut.isValid());
     sut.put(fProductType, "BOND");
     sut.put(fNotional, 1000.0);
     assertTrue(sut.isValid());
 
-    sut = new Record(schema);
+    sut = new Record(ns.toContext(), schema);
     sut.put(fProductType, "SWAP");
     sut.put(fNotional, 1000.0);
     assertFalse(sut.isValid());
@@ -251,6 +279,31 @@ public class RecordTest {
     assertFalse(sut.isValid());
     sut.put(fReceiveNotional, 500.0);
     assertTrue(sut.isValid());
+  }
+
+  @Test
+  public void testMultiNsContext() throws Exception {
+    Term<String> fFieldA = Term.of(1, "ns1/a", Type.STRING);
+    Term<Double> fFieldB = Term.of(2, "ns1/b", Type.DOUBLE);
+    Namespace ns1 = new Namespace("ns1", SemVer.of("1.0.0"), new Vocabulary(List.of(fFieldA, fFieldB)), Map.of());
+    Term<Integer> fFieldC = Term.of(1, "ns2/c", Type.INT);
+    Term<String> fFieldD = Term.of(2, "ns2/d", Type.STRING);
+    Schema schema = new Schema(Name.ofQualified("ns2/record"));
+    Namespace ns2 = new Namespace("ns2", SemVer.of("1.0.0"), new Vocabulary(List.of(fFieldC, fFieldD)), Map.of(schema.getName(), schema));
+    Context ctx = new Context(Set.of(ns1, ns2));
+
+    Record rec = new Record(ctx, ctx.getSchema("ns2/record").orElseThrow());
+    rec.put("ns1/a", "string1");
+    rec.put("ns1/b", 3.14);
+    rec.put("ns2/c", 42);
+    rec.put("ns2/d", "string2");
+
+    byte[] bytes = DeSerUtil.serialize(rec);
+    rec = DeSerUtil.deserialize(ctx, ctx.getSchema("ns2/record").orElseThrow(), bytes);
+    assertEquals("string1", rec.get("ns1/a"));
+    assertEquals(3.14, (double) rec.get("ns1/b"), 0.1);
+    assertEquals(42, (int) rec.get("ns2/c"));
+    assertEquals("string2", rec.get("ns2/d"));
   }
 
   @Test
@@ -274,8 +327,9 @@ public class RecordTest {
   private <T> void assertTypeRoundTrips(Type<T> type, T value, int persistedSize) throws IOException {
     Term<T> fieldA = Term.of(1, "myns", "a", type);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
-    Schema schema = new Schema(vocab, Name.of("myns", "schema"));
-    Record sut = new Record(schema);
+    Schema schema = new Schema(Name.of("myns", "schema"));
+    Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
+    Record sut = new Record(ns.toContext(), schema);
     sut.put(fieldA, value);
     assertEquals(value, sut.get(fieldA));
 
@@ -283,7 +337,7 @@ public class RecordTest {
     // two extra bytes: num fields, tag
     assertEquals(persistedSize+2, bytes.length);
 
-    sut = DeSerUtil.deserialize(schema, bytes);
+    sut = DeSerUtil.deserialize(ns.toContext(), schema, bytes);
     if (value instanceof byte[]) {
       assertArrayEquals((byte[]) value, (byte[]) sut.get(fieldA));
     } else {

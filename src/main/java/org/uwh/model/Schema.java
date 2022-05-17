@@ -5,21 +5,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.uwh.model.validation.Predicate;
 import org.uwh.model.validation.Rule;
 import org.uwh.model.validation.Rules;
 
 
-public class Schema {
-  private final Vocabulary vocab;
+public class Schema implements TagTranslation<Schema> {
   private final Set<Term> required;
   private boolean allowOthers;
   private final Set<Term> allowed;
   private final Name name;
   private final List<Rule> rules;
 
-  public Schema(Vocabulary vocab, Name name) {
-    this.vocab = vocab;
+  public Schema(Name name) {
     this.name = name;
     this.required = new HashSet<>();
     allowOthers = true;
@@ -27,12 +27,27 @@ public class Schema {
     rules = new ArrayList<>();
   }
 
+  private Schema(Name name, Set<Term> required, Set<Term> allowed, boolean allowOthers, List<Rule> rules) {
+    this.name = name;
+    this.required = required;
+    this.allowed = allowed;
+    this.allowOthers = allowOthers;
+    this.rules = rules;
+  }
+
   public Name getName() {
     return name;
   }
 
-  public Vocabulary getVocabulary() {
-    return vocab;
+  @Override
+  public Schema withTagTranslation(Function<Integer, Integer> mapper) {
+    return new Schema(
+        name,
+        required.stream().map(t -> t.withTagTranslation(mapper)).collect(Collectors.toSet()),
+        allowed.stream().map(t -> t.withTagTranslation(mapper)).collect(Collectors.toSet()),
+        allowOthers,
+        rules.stream().map(r -> r.withTagTranslation(mapper)).collect(Collectors.toList())
+    );
   }
 
   public Schema require(Term<?> t) {
@@ -73,7 +88,7 @@ public class Schema {
         && rules.stream().allMatch(r -> r.isSatisfied(rec));
   }
 
-  public boolean isValidTerm(Term<?> t) {
-    return vocab.isValidTerm(t) && (allowOthers || allowed.contains(t));
+  public boolean isValidTerm(Context ctx, Term<?> t) {
+    return ctx.getVocab().isValidTerm(t) && (allowOthers || allowed.contains(t));
   }
 }

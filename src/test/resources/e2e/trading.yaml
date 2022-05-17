@@ -1,4 +1,5 @@
 namespace: trading
+version: 1.0.0
 terms:
   - name: id
     tag: 1

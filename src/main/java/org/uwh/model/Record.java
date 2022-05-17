@@ -6,19 +6,22 @@ import java.util.Map;
 public class Record {
   private final Map<Integer,Object> values;
   private final Schema schema;
+  private final Context ctx;
 
-  public Record(Schema schema) {
+  public Record(Context ctx, Schema schema) {
     values = new HashMap<>();
+    this.ctx = ctx;
     this.schema = schema;
   }
 
-  public Record(Schema schema, Map<Integer,Object> values) {
+  public Record(Context ctx, Schema schema, Map<Integer,Object> values) {
+    this.ctx = ctx;
     this.schema = schema;
     this.values = values;
   }
 
   public<T> void put(Term<T> t, T value) {
-    if (!schema.isValidTerm(t)) {
+    if (!schema.isValidTerm(ctx, t)) {
       throw new IllegalArgumentException("Term " + t + " is not valid for schema " + schema);
     }
     if (value == null) {
@@ -29,7 +32,7 @@ public class Record {
   }
 
   public void put(Name n, Object value) {
-    Term t = schema.getVocabulary().lookupTerm(n).orElseThrow();
+    Term t = ctx.getVocab().lookupTerm(n).orElseThrow();
     put(t, value);
   }
 
@@ -42,7 +45,7 @@ public class Record {
   }
 
   public <T> T get(Name n) {
-    Term t = schema.getVocabulary().lookupTerm(n).orElseThrow();
+    Term t = ctx.getVocab().lookupTerm(n).orElseThrow();
     return (T) get(t);
   }
 
@@ -56,6 +59,10 @@ public class Record {
 
   public Schema getSchema() {
     return schema;
+  }
+
+  public Context getContext() {
+    return ctx;
   }
 
   public boolean isValid() {

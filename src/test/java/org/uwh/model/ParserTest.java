@@ -9,12 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-public class SchemaRegistryTest {
+public class ParserTest {
   @Test
   public void testYamlRead() throws Exception {
-    SchemaRegistry registry = SchemaRegistry.parse(Path.of("src/test/resources/schemas.yaml"));
+    Namespace ns = Parser.parseNamespace(Path.of("src/test/resources/schemas.yaml"));
 
-    Vocabulary vocab = registry.getVocabulary();
+    Vocabulary vocab = ns.getVocab();
     assertEquals(7, vocab.size());
     assertEquals(Type.STRING, vocab.lookupTerm(Name.of("myns", "varianta")).get().getType());
     assertTrue(vocab.hasTerm(Name.ofQualified("myns/a")));
@@ -23,7 +23,7 @@ public class SchemaRegistryTest {
     Term mynsA = vocab.lookupTerm(Name.of("myns", "a")).get();
     assertEquals(1, mynsA.getAliases().size());
 
-    Map<Name, Schema> schemas = registry.getSchemas();
+    Map<Name, Schema> schemas = ns.getSchemas();
     assertEquals(2, schemas.size());
   }
 }
