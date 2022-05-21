@@ -195,12 +195,31 @@ public class Parser {
         .map(s -> parseName(defaultNamespace, s))
         .collect(Collectors.toSet());
 
+    List rules = List.of();
+    if (attrs.containsKey("validation")) {
+      rules = (List) ((List) attrs.get("validation")).stream().map(v -> parseTermValidation((Map) v, type)).collect(Collectors.toList());
+    }
+
     return new Term<>(
         (Integer) attrs.get("tag"),
         parseName(defaultNamespace, (String) attrs.get("name")),
         type,
-        aliases
+        aliases,
+        rules
     );
+  }
+
+  private static Rule parseTermValidation(Map attrs, Type type) {
+    boolean isFloating = type.getClazz().equals(Double.class) || type.getClazz().equals(Float.class);
+    if (attrs.containsKey("min")) {
+      boolean inclusive = attrs.containsKey("inclusive") ? (boolean) attrs.get("inclusive") : true;
+      return isFloating ? Rules.min(((Number) attrs.get("min")).doubleValue(), inclusive) : Rules.min(((Number) attrs.get("min")).longValue(), inclusive);
+    } else if (attrs.containsKey("max")) {
+      boolean inclusive = attrs.containsKey("inclusive") ? (boolean) attrs.get("inclusive") : true;
+      return isFloating ? Rules.max(((Number) attrs.get("max")).doubleValue(), inclusive) : Rules.max(((Number) attrs.get("max")).longValue(), inclusive);
+    } else {
+      throw new IllegalArgumentException("Unexpected term validation: " + attrs);
+    }
   }
 
   private static Name parseName(String defaultNamespace, String name) {

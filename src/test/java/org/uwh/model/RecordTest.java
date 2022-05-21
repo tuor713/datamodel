@@ -122,7 +122,7 @@ public class RecordTest {
 
     byte[] bytes = DeSerUtil.serialize(sut);
 
-    Term<String> fieldB = new Term<>(1, Name.of("myns", "aprime"), Type.STRING, Set.of(Name.of("myns", "a")));
+    Term<String> fieldB = new Term<>(1, Name.of("myns", "aprime"), Type.STRING, Set.of(Name.of("myns", "a")), List.of());
     Vocabulary vocab2 = new Vocabulary(List.of(fieldB));
     Schema schema2 = new Schema(Name.of("myns", "schema"));
     Namespace ns2 = new Namespace("myns", SemVer.of("1.1.0"), vocab2, Map.of(schema2.getName(), schema2));

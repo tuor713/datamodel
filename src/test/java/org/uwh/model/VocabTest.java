@@ -5,7 +5,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.uwh.model.types.Type;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class VocabTest {
@@ -19,14 +19,14 @@ public class VocabTest {
   @Test
   public void validatesDupeVocabWithAliases() {
     Vocabulary vocab = new Vocabulary();
-    vocab.insertTerm(new Term<>(1, Name.of("myns", "a"), Type.STRING, Set.of(Name.of("myns", "b"))));
+    vocab.insertTerm(new Term<>(1, Name.of("myns", "a"), Type.STRING, Set.of(Name.of("myns", "b")), List.of()));
 
     assertThrows(IllegalArgumentException.class, () -> {
       vocab.insertTerm(Term.of(2, "myns", "b", Type.STRING));
     });
 
     assertThrows(IllegalArgumentException.class, () -> {
-      vocab.insertTerm(new Term<>(2, Name.of("myns", "newb"), Type.STRING, Set.of(Name.of("myns", "b"))));
+      vocab.insertTerm(new Term<>(2, Name.of("myns", "newb"), Type.STRING, Set.of(Name.of("myns", "b")), List.of()));
     });
   }
 }

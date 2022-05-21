@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.uwh.model.types.Type;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -25,5 +26,16 @@ public class ParserTest {
 
     Map<Name, Schema> schemas = ns.getSchemas();
     assertEquals(2, schemas.size());
+  }
+
+  @Test
+  public void testTermValidation() throws Exception {
+    Namespace ns = Parser.parseNamespace(Path.of("src/test/resources/schemas.yaml"));
+    Vocabulary vocab = ns.getVocab();
+    Term<Integer> b = (Term<Integer>) vocab.lookupTerm("myns/b").orElseThrow();
+    assertTrue(b.isValid(0));
+    assertFalse(b.isValid(100));
+    assertTrue(b.isValid(99));
+    assertFalse(b.isValid(-10));
   }
 }

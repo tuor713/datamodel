@@ -59,6 +59,10 @@ public class Vocabulary implements TagTranslation<Vocabulary> {
     return Optional.ofNullable(vocab.get(tag));
   }
 
+  public Optional<Term<?>> lookupTerm(String qName) {
+    return lookupTerm(Name.ofQualified(qName));
+  }
+
   public Optional<Term<?>> lookupTerm(Name name) {
     // TODO more efficient implementation
     return vocab.values().stream().filter(t -> t.getName().equals(name) || t.getAliases().stream().anyMatch(n -> n.equals(name))).findAny();

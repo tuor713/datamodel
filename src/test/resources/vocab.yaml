@@ -9,6 +9,11 @@ terms:
   - name: myns/b
     tag: 2
     type: int
+    validation:
+      - min: 0
+        inclusive: true
+      - max: 100
+        inclusive: false
   - name: myns/varianta
     tag: 3
     inherit: myns/a

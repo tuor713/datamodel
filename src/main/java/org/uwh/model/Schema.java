@@ -17,7 +17,7 @@ public class Schema implements TagTranslation<Schema> {
   private boolean allowOthers;
   private final Set<Term> allowed;
   private final Name name;
-  private final List<Rule> rules;
+  private final List<Rule<Record>> rules;
 
   public Schema(Name name) {
     this.name = name;
@@ -27,7 +27,7 @@ public class Schema implements TagTranslation<Schema> {
     rules = new ArrayList<>();
   }
 
-  private Schema(Name name, Set<Term> required, Set<Term> allowed, boolean allowOthers, List<Rule> rules) {
+  private Schema(Name name, Set<Term> required, Set<Term> allowed, boolean allowOthers, List<Rule<Record>> rules) {
     this.name = name;
     this.required = required;
     this.allowed = allowed;
@@ -74,11 +74,11 @@ public class Schema implements TagTranslation<Schema> {
     rules.add(Rules.requireOneOrMoreOf(terms));
   }
 
-  public void requireConditionally(Predicate<Record> cond, Rule ifRule, Rule elseRule) {
+  public void requireConditionally(Predicate<Record> cond, Rule<Record> ifRule, Rule<Record> elseRule) {
     rules.add(Rules.conditionally(cond, ifRule, elseRule));
   }
 
-  public void require(Rule rule) {
+  public void require(Rule<Record> rule) {
     rules.add(rule);
   }
 
