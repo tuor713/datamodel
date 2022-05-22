@@ -5,14 +5,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import org.uwh.model.validation.Predicate;
+import java.util.function.Predicate;
 import org.uwh.model.validation.Rule;
 import org.uwh.model.validation.Rules;
 
 
-public class Schema implements TagTranslation<Schema> {
+public class Schema {
   private final Set<Term> required;
   private boolean allowOthers;
   private final Set<Term> allowed;
@@ -37,17 +35,6 @@ public class Schema implements TagTranslation<Schema> {
 
   public Name getName() {
     return name;
-  }
-
-  @Override
-  public Schema withTagTranslation(Function<Integer, Integer> mapper) {
-    return new Schema(
-        name,
-        required.stream().map(t -> t.withTagTranslation(mapper)).collect(Collectors.toSet()),
-        allowed.stream().map(t -> t.withTagTranslation(mapper)).collect(Collectors.toSet()),
-        allowOthers,
-        rules.stream().map(r -> r.withTagTranslation(mapper)).collect(Collectors.toList())
-    );
   }
 
   public Schema require(Term<?> t) {
@@ -83,8 +70,8 @@ public class Schema implements TagTranslation<Schema> {
   }
 
   boolean isValid(Record rec) {
-    Map<Integer,Object> values = rec.getValues();
-    return required.stream().allMatch(t -> values.containsKey(t.getTag()))
+    Map<Term<?>,Object> values = rec.getValues();
+    return required.stream().allMatch(values::containsKey)
         && rules.stream().allMatch(r -> r.isSatisfied(rec));
   }
 

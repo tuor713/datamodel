@@ -13,23 +13,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TermTest {
   @Test
-  public void testEqualityByTag() {
-    assertEquals(Term.of(1, "myns", "a", Type.STRING), Term.of(1, "myns", "b", Type.STRING));
-    assertNotEquals(Term.of(1, "myns", "a", Type.STRING), Term.of(2, "myns", "a", Type.STRING));
+  public void testEquality() {
+    Term sut = Term.of("myns/a", Type.STRING);
+    assertNotEquals(sut, Term.of("myns/b", Type.STRING));
+    assertNotEquals(sut, Term.of("myns/a", Type.STRING));
+    assertEquals(sut, sut);
   }
 
   @Test
   public void testNameMatching() {
-    assertTrue(Term.of(1, "myns", "a", Type.STRING).matchesName(Name.of("myns", "a")));
-    assertTrue(Term.of(1, "myns", "a", Type.STRING).matchesName(Name.of("MyNs", "a")));
-    assertTrue(Term.of(1, "myns", "a", Type.STRING).matchesName(Name.of("myns", "A")));
-    assertFalse(Term.of(1, "myns", "a", Type.STRING).matchesName(Name.of("myns", "b")));
-    assertTrue(new Term(1, Name.of("myns", "a"), Type.STRING, Set.of(Name.of("myns", "b")), List.of()).matchesName(Name.of("myns", "b")));
+    assertTrue(Term.of("myns/a", Type.STRING).matchesName(Name.of("myns", "a")));
+    assertTrue(Term.of("myns/a", Type.STRING).matchesName(Name.of("MyNs", "a")));
+    assertTrue(Term.of("myns/a", Type.STRING).matchesName(Name.of("myns", "A")));
+    assertFalse(Term.of("myns/a", Type.STRING).matchesName(Name.of("myns", "b")));
+    assertTrue(new Term(Name.of("myns", "a"), Type.STRING, Set.of(Name.of("myns", "b")), List.of()).matchesName(Name.of("myns", "b")));
   }
 
   @Test
   public void testValidations() {
-    Term<Double> term = new Term(1, Name.ofQualified("myns/double"), Type.DOUBLE, Set.of(), List.of());
+    Term<Double> term = new Term(Name.ofQualified("myns/double"), Type.DOUBLE, Set.of(), List.of());
     assertTrue(term.isValid(3.14));
     assertFalse(((Term) term).isValid("hello"));
 

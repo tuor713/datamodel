@@ -37,6 +37,10 @@ public class Name {
     return name;
   }
 
+  public String getQualifiedName() {
+    return namespace + "/" + name;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

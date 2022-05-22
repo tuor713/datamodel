@@ -1,23 +1,22 @@
 package org.uwh.model;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 
-public class Vocabulary implements TagTranslation<Vocabulary> {
-  private final Map<Integer, Term<?>> vocab;
+public class Vocabulary {
+  private final Set<Term<?>> vocab;
 
   public Vocabulary() {
-    vocab = new HashMap<>();
+    vocab = new HashSet<>();
   }
 
   public Vocabulary(Collection<Term<?>> vocab) {
-    this.vocab = new HashMap<>();
+    this.vocab = new HashSet<>();
     vocab.forEach(this::insertTerm);
   }
 
@@ -27,36 +26,20 @@ public class Vocabulary implements TagTranslation<Vocabulary> {
     return result;
   }
 
-  @Override
-  public Vocabulary withTagTranslation(Function<Integer, Integer> mapper) {
-    return new Vocabulary(vocab.values().stream().map(t -> t.withTagTranslation(mapper)).collect(Collectors.toList()));
-  }
-
   public void insertTerm(Term<?> t) {
-    if (vocab.containsKey(t.getTag())) {
-      throw new IllegalArgumentException("Tag " + t.getTag() + " is already defined");
-    }
-
     if (hasTerm(t.getName())) {
       throw new IllegalArgumentException("Name " + t.getName() + " is already defined");
     }
-    Optional<Name> dupeAlias = t.getAliases().stream().filter(n -> hasTerm(n)).findAny();
+    Optional<Name> dupeAlias = t.getAliases().stream().filter(this::hasTerm).findAny();
     if (dupeAlias.isPresent()) {
       throw new IllegalArgumentException("Alias " + dupeAlias.get() + " is already defined");
     }
 
-    vocab.put(t.getTag(), t);
+    vocab.add(t);
   }
 
   public boolean isValidTerm(Term<?> t) {
-    Term<?> existing = vocab.get(t.getTag());
-
-    // we check for *exact* match, users must get Term objects via the lookup function
-    return t == existing;
-  }
-
-  public Optional<Term<?>> getTerm(int tag) {
-    return Optional.ofNullable(vocab.get(tag));
+    return vocab.contains(t);
   }
 
   public Optional<Term<?>> lookupTerm(String qName) {
@@ -65,11 +48,11 @@ public class Vocabulary implements TagTranslation<Vocabulary> {
 
   public Optional<Term<?>> lookupTerm(Name name) {
     // TODO more efficient implementation
-    return vocab.values().stream().filter(t -> t.getName().equals(name) || t.getAliases().stream().anyMatch(n -> n.equals(name))).findAny();
+    return vocab.stream().filter(t -> t.getName().equals(name) || t.getAliases().stream().anyMatch(n -> n.equals(name))).findAny();
   }
 
-  private Collection<Term<?>> getTerms() {
-    return vocab.values();
+  public Collection<Term<?>> getTerms() {
+    return Collections.unmodifiableCollection(vocab);
   }
 
   public boolean hasTerm(Name name) {

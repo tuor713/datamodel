@@ -1,13 +1,11 @@
 namespace: myns
 terms:
   - name: a
-    tag: 1
     type: string
     description: A very important field
     aliases:
       - olda
   - name: myns/b
-    tag: 2
     type: int
     constraint:
       - min: 0
@@ -15,21 +13,17 @@ terms:
       - max: 100
         inclusive: false
   - name: myns/varianta
-    tag: 3
     inherit: myns/a
   - name: myns/list
-    tag: 4
     type:
       type: list
       item: string
   - name: otherns/map
-    tag: 5
     type:
       type: map
       key: string
       value: int
   - name: uniontype
-    tag: 6
     type:
       type: union
       variants:

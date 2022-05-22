@@ -6,14 +6,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.uwh.model.io.DeSerUtil;
 import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 import org.uwh.model.types.UnionType;
-import org.uwh.model.validation.Predicate;
 import org.uwh.model.validation.Rules;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RecordTest {
   @Test
   public void testInsertRetrieve() {
-    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
+    Term<String> fieldA = Term.of("myns/a", Type.STRING);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -35,7 +33,7 @@ public class RecordTest {
 
   @Test
   public void testFieldSugar() {
-    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
+    Term<String> fieldA = Term.of("myns/a", Type.STRING);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -51,25 +49,25 @@ public class RecordTest {
 
   @Test
   public void testCannotInsertTermNotInVocab() {
-    Vocabulary vocab = new Vocabulary(List.of(Term.of(1, "myns", "a", Type.STRING)));
+    Vocabulary vocab = new Vocabulary(List.of(Term.of("myns/a", Type.STRING)));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
 
     Record sut = new Record(ns.toContext(), schema);
     assertThrows(IllegalArgumentException.class, () -> {
-      sut.put(Term.of(2, "myns", "b", Type.STRING), "string");
+      sut.put(Term.of("myns/b", Type.STRING), "string");
     });
 
     assertThrows(IllegalArgumentException.class, () -> {
-      sut.put(Term.of(1, "myns", "b", Type.STRING), "string");
+      sut.put(Term.of("myns/b", Type.STRING), "string");
     });
   }
 
   @Test
   public void testSerialization() throws IOException {
-    Term<String> fString = Term.of(1, "myns", "string_field", Type.STRING);
-    Term<Integer> fInt = Term.of(2, "myns", "int_field", Type.INT);
-    Term<Double> fDouble = Term.of(3, "myns", "double_field", Type.DOUBLE);
+    Term<String> fString = Term.of("myns/string_field", Type.STRING);
+    Term<Integer> fInt = Term.of("myns/int_field", Type.INT);
+    Term<Double> fDouble = Term.of("myns/double_field", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fString, fInt, fDouble));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -88,9 +86,9 @@ public class RecordTest {
 
   @Test
   public void testSerializationSize() throws Exception {
-    Term<String> fString = Term.of(1, "myns", "string_field", Type.STRING);
-    Term<Integer> fInt = Term.of(2, "myns", "int_field", Type.INT);
-    Term<Double> fDouble = Term.of(3, "myns", "double_field", Type.DOUBLE);
+    Term<String> fString = Term.of("myns/string_field", Type.STRING);
+    Term<Integer> fInt = Term.of("myns/int_field", Type.INT);
+    Term<Double> fDouble = Term.of("myns/double_field", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fString, fInt, fDouble));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -112,7 +110,7 @@ public class RecordTest {
 
   @Test
   public void testDeSerWithDifferentSchemaVersions() throws IOException {
-    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
+    Term<String> fieldA = Term.of("myns/a", Type.STRING);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -122,7 +120,7 @@ public class RecordTest {
 
     byte[] bytes = DeSerUtil.serialize(sut);
 
-    Term<String> fieldB = new Term<>(1, Name.of("myns", "aprime"), Type.STRING, Set.of(Name.of("myns", "a")), List.of());
+    Term<String> fieldB = new Term<>(Name.of("myns", "aprime"), Type.STRING, Set.of(Name.of("myns", "a")), List.of());
     Vocabulary vocab2 = new Vocabulary(List.of(fieldB));
     Schema schema2 = new Schema(Name.of("myns", "schema"));
     Namespace ns2 = new Namespace("myns", SemVer.of("1.1.0"), vocab2, Map.of(schema2.getName(), schema2));
@@ -133,9 +131,9 @@ public class RecordTest {
 
   @Test
   public void testSerializeWithNulls() throws IOException {
-    Term<String> fString = Term.of(1, "myns", "string_field", Type.STRING);
-    Term<Integer> fInt = Term.of(2, "myns", "int_field", Type.INT);
-    Term<Double> fDouble = Term.of(3, "myns", "double_field", Type.DOUBLE);
+    Term<String> fString = Term.of("myns/string_field", Type.STRING);
+    Term<Integer> fInt = Term.of("myns/int_field", Type.INT);
+    Term<Double> fDouble = Term.of("myns/double_field", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fString, fInt, fDouble));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -157,8 +155,8 @@ public class RecordTest {
 
   @Test
   public void testValidation() {
-    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
-    Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
+    Term<String> fieldA = Term.of("myns/a", Type.STRING);
+    Term<Integer> fieldB = Term.of("myns/b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -197,8 +195,8 @@ public class RecordTest {
 
   @Test
   public void testOneOfRule() {
-    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
-    Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
+    Term<String> fieldA = Term.of("myns/a", Type.STRING);
+    Term<Integer> fieldB = Term.of("myns/b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
     Schema schema = new Schema(Name.ofQualified("myns/schema"));
     schema.requireOneOf(fieldA, fieldB);
@@ -219,8 +217,8 @@ public class RecordTest {
 
   @Test
   public void testAtLeastOneOfRule() {
-    Term<String> fieldA = Term.of(1, "myns", "a", Type.STRING);
-    Term<Integer> fieldB = Term.of(2, "myns", "b", Type.INT);
+    Term<String> fieldA = Term.of("myns/a", Type.STRING);
+    Term<Integer> fieldB = Term.of("myns/b", Type.INT);
     Vocabulary vocab = new Vocabulary(List.of(fieldA, fieldB));
     Schema schema = new Schema(Name.ofQualified("myns/schema"));
     schema.requireOneOrMoreOf(fieldA, fieldB);
@@ -242,24 +240,14 @@ public class RecordTest {
 
   @Test
   public void testConditionalRules() {
-    Term<String> fProductType = Term.of(1, "myns/product_type", Type.STRING);
-    Term<Double> fNotional = Term.of(2, "myns/notional", Type.DOUBLE);
-    Term<Double> fPayNotional = Term.of(3, "myns/pay_notional", Type.DOUBLE);
-    Term<Double> fReceiveNotional = Term.of(4, "myns/receive_notional", Type.DOUBLE);
+    Term<String> fProductType = Term.of("myns/product_type", Type.STRING);
+    Term<Double> fNotional = Term.of("myns/notional", Type.DOUBLE);
+    Term<Double> fPayNotional = Term.of("myns/pay_notional", Type.DOUBLE);
+    Term<Double> fReceiveNotional = Term.of("myns/receive_notional", Type.DOUBLE);
     Vocabulary vocab = new Vocabulary(List.of(fProductType, fNotional, fPayNotional, fReceiveNotional));
     Schema schema = new Schema(Name.ofQualified("myns/trade"));
     schema.require(Rules.conditionally(
-        new Predicate<>() {
-          @Override
-          public boolean test(Record rec) {
-            return "SWAP".equals(rec.get(fProductType));
-          }
-
-          @Override
-          public Predicate<Record> withTagTranslation(Function<Integer, Integer> mapper) {
-            return this;
-          }
-        },
+        rec -> "SWAP".equals(rec.get(fProductType)),
         Rules.all(Rules.require(fPayNotional), Rules.require(fReceiveNotional)),
         Rules.require(fNotional)));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));
@@ -283,11 +271,11 @@ public class RecordTest {
 
   @Test
   public void testMultiNsContext() throws Exception {
-    Term<String> fFieldA = Term.of(1, "ns1/a", Type.STRING);
-    Term<Double> fFieldB = Term.of(2, "ns1/b", Type.DOUBLE);
+    Term<String> fFieldA = Term.of("ns1/a", Type.STRING);
+    Term<Double> fFieldB = Term.of("ns1/b", Type.DOUBLE);
     Namespace ns1 = new Namespace("ns1", SemVer.of("1.0.0"), new Vocabulary(List.of(fFieldA, fFieldB)), Map.of());
-    Term<Integer> fFieldC = Term.of(1, "ns2/c", Type.INT);
-    Term<String> fFieldD = Term.of(2, "ns2/d", Type.STRING);
+    Term<Integer> fFieldC = Term.of("ns2/c", Type.INT);
+    Term<String> fFieldD = Term.of("ns2/d", Type.STRING);
     Schema schema = new Schema(Name.ofQualified("ns2/record"));
     Namespace ns2 = new Namespace("ns2", SemVer.of("1.0.0"), new Vocabulary(List.of(fFieldC, fFieldD)), Map.of(schema.getName(), schema));
     Context ctx = new Context(Set.of(ns1, ns2));
@@ -325,7 +313,7 @@ public class RecordTest {
   }
 
   private <T> void assertTypeRoundTrips(Type<T> type, T value, int persistedSize) throws IOException {
-    Term<T> fieldA = Term.of(1, "myns", "a", type);
+    Term<T> fieldA = Term.of("myns", "a", type);
     Vocabulary vocab = new Vocabulary(List.of(fieldA));
     Schema schema = new Schema(Name.of("myns", "schema"));
     Namespace ns = new Namespace("myns", SemVer.of("1.0.0"), vocab, Map.of(schema.getName(), schema));

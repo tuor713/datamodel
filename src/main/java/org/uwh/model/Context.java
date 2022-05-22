@@ -1,11 +1,8 @@
 package org.uwh.model;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,15 +26,7 @@ public class Context {
   }
 
   public Context(Set<Namespace> namespaces) {
-    List<Namespace> sortedNamespaces = new ArrayList<>(namespaces);
-    sortedNamespaces.sort(Comparator.comparing(Namespace::getName));
-    final int multiply = sortedNamespaces.size();
-    for (int i=0; i<sortedNamespaces.size(); i++) {
-      final int idx = i;
-      sortedNamespaces.set(i, sortedNamespaces.get(i).withTagTranslation(id -> id*multiply+idx));
-    }
-
-    this.namespaces = new HashSet<>(sortedNamespaces);
+    this.namespaces = new HashSet<>(namespaces);
     this.vocab = Vocabulary.createJointVocab(this.namespaces.stream().map(Namespace::getVocab).collect(Collectors.toList()));
     this.schemas = new HashMap<>();
     this.namespaces.forEach(n -> this.schemas.putAll(n.getSchemas()));

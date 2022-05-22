@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -16,7 +16,6 @@ import org.uwh.model.types.ListType;
 import org.uwh.model.types.MapType;
 import org.uwh.model.types.Type;
 import org.uwh.model.types.UnionType;
-import org.uwh.model.validation.Predicate;
 import org.uwh.model.validation.Rule;
 import org.uwh.model.validation.Rules;
 import org.yaml.snakeyaml.Yaml;
@@ -139,13 +138,6 @@ public class Parser {
 
       return (l == null && r == null) || (l != null && l.equals(r));
     }
-
-    @Override
-    public Predicate<Record> withTagTranslation(Function<Integer, Integer> mapper) {
-      Object l = (lhs instanceof Term<?>) ? ((Term) lhs).withTagTranslation(mapper) : lhs;
-      Object r = (rhs instanceof Term<?>) ? ((Term) rhs).withTagTranslation(mapper) : rhs;
-      return new EqualsPredicate(l, r);
-    }
   }
 
   private static Predicate<Record> parseCondition(Map attrs, Vocabulary vocab, String defaultNamespace) {
@@ -201,7 +193,6 @@ public class Parser {
     }
 
     return new Term<>(
-        (Integer) attrs.get("tag"),
         parseName(defaultNamespace, (String) attrs.get("name")),
         type,
         aliases,

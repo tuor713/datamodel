@@ -3,7 +3,6 @@ namespace: myns
 version: 1.0.0
 terms:
   - name: myns/extra
-    tag: 10
     type: string
     description: This field extends the vocabulary in vocab.yaml
 schemas:

@@ -27,11 +27,11 @@ public class EndToEndTest {
   @Test
   public void testProgressiveEnrichmentSharedVocab() throws Exception {
     // Producer - schemaA
-    Term<String> fTradeId = Term.of(1, "trading", "id", Type.STRING);
-    Term<Double> fNotional = Term.of(2, "trading", "notional", Type.DOUBLE);
-    Term<String> fSecurityId = Term.of(3, "trading", "security_id", Type.STRING);
-    Term<String> fTicker = Term.of(4, "security", "ticker", Type.STRING);
-    Term<String> fBook = Term.of(5, "trading", "book", Type.STRING);
+    Term<String> fTradeId = Term.of("trading/id", Type.STRING);
+    Term<Double> fNotional = Term.of("trading/notional", Type.DOUBLE);
+    Term<String> fSecurityId = Term.of("trading/security_id", Type.STRING);
+    Term<String> fTicker = Term.of("security/ticker", Type.STRING);
+    Term<String> fBook = Term.of("trading/book", Type.STRING);
     Vocabulary voc = new Vocabulary(List.of(fTradeId, fNotional, fSecurityId, fTicker, fBook));
     Schema schemaA = new Schema(Name.of("trading", "trade"))
         .require(fTradeId).require(fNotional).require(fBook);

@@ -3,10 +3,9 @@ package org.uwh.model;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 
-public class Namespace implements TagTranslation<Namespace> {
+public class Namespace {
   private final String name;
   private final SemVer version;
   private final Vocabulary vocab;
@@ -37,17 +36,6 @@ public class Namespace implements TagTranslation<Namespace> {
 
   public Map<Name, Schema> getSchemas() {
     return schemas;
-  }
-
-  @Override
-  public Namespace withTagTranslation(Function<Integer, Integer> mapper) {
-    Map<Name,Schema> newSchemas = new HashMap<>();
-    schemas.values().forEach(s -> {
-      Schema newSchema = s.withTagTranslation(mapper);
-      newSchemas.put(newSchema.getName(), newSchema);
-    });
-
-    return new Namespace(name, version, vocab.withTagTranslation(mapper), newSchemas);
   }
 
   @Override

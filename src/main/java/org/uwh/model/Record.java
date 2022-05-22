@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Record {
-  private final Map<Integer,Object> values;
+  private final Map<Term<?>,Object> values;
   private final Schema schema;
   private final Context ctx;
 
@@ -14,7 +14,7 @@ public class Record {
     this.schema = schema;
   }
 
-  public Record(Context ctx, Schema schema, Map<Integer,Object> values) {
+  public Record(Context ctx, Schema schema, Map<Term<?>,Object> values) {
     this.ctx = ctx;
     this.schema = schema;
     this.values = values;
@@ -25,9 +25,9 @@ public class Record {
       throw new IllegalArgumentException("Term " + t + " is not valid for schema " + schema);
     }
     if (value == null) {
-      values.remove(t.getTag());
+      values.remove(t);
     } else {
-      values.put(t.getTag(), value);
+      values.put(t, value);
     }
   }
 
@@ -41,7 +41,7 @@ public class Record {
   }
 
   public <T> T get(Term<T> t) {
-    return (T) values.get(t.getTag());
+    return (T) values.get(t);
   }
 
   public <T> T get(Name n) {
@@ -53,7 +53,7 @@ public class Record {
     return get(Name.ofQualified(qualifiedName));
   }
 
-  public Map<Integer,Object> getValues() {
+  public Map<Term<?>,Object> getValues() {
     return values;
   }
 
