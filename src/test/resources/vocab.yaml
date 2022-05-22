@@ -9,7 +9,7 @@ terms:
   - name: myns/b
     tag: 2
     type: int
-    validation:
+    constraint:
       - min: 0
         inclusive: true
       - max: 100

@@ -196,8 +196,8 @@ public class Parser {
         .collect(Collectors.toSet());
 
     List rules = List.of();
-    if (attrs.containsKey("validation")) {
-      rules = (List) ((List) attrs.get("validation")).stream().map(v -> parseTermValidation((Map) v, type)).collect(Collectors.toList());
+    if (attrs.containsKey("constraint")) {
+      rules = (List) ((List) attrs.get("constraint")).stream().map(v -> parseTermValidation((Map) v, type)).collect(Collectors.toList());
     }
 
     return new Term<>(
